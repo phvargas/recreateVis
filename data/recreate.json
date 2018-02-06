@@ -1,0 +1,21 @@
+[
+  {
+    "root_memento": {
+      "timestamp": 19970102130137,
+      "url": "http://cs.odu.edu/",
+      "archived_at": "IA"
+    },
+    "resources": [
+      {
+        "archived_at": "london_library",
+        "uri": "http://image.png",
+        "timestamp": 19970101130155
+      },
+      {
+        "archived_at": "portugal_library",
+        "uri": "http://somefile.css",
+        "timestamp": 20000414182011
+      }
+    ]
+  }
+]
