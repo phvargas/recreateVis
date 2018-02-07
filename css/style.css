@@ -263,6 +263,25 @@ iframe {
 	margin-right: 0; /* 25px*/
 }
 
+path {
+    stroke-width: 2;
+    fill: none;
+}
+
+.axis path,
+.axis line {
+    fill: none;
+    stroke: grey;
+    stroke-width: 1;
+    shape-rendering: crispEdges;
+}
+
+.tooltip {
+  position: absolute;
+  width: 100px;
+  height: 28px;
+  pointer-events: none;
+}
 
 
 @media only screen and (max-width: 860px) {
