@@ -7,7 +7,7 @@ var over = "ontouchstart" in window ? "touchstart" : "mouseover";
 var out = "ontouchstart" in window ? "touchend" : "mouseout";
 
 
-var margin = {top: 20, right: 20, bottom: 100, left: 40},
+var margin = {top: 100, right: 20, bottom: 100, left: 150},
     width = visWidth - margin.left - margin.right,
     height = visHeight - margin.top - margin.bottom - 15;
 
@@ -23,7 +23,7 @@ var xValue = function(d) {
 			return d.x;
     },
     xScale = d3.scale.linear().range([0, width]), // value -> display
-    xMap = function(d) { return xScale(xValue(d));}, // data -> display
+    xMap = function(d) { console.log(xScale(xValue(d))); return xScale(xValue(d));}, // data -> display
     xAxis = d3.svg.axis().scale(xScale).orient("bottom");
 
 /*
@@ -41,8 +41,8 @@ var yValue = function(d) {
     //return d.ave_injury;
     return d.archived_at;
     }, // data -> value
-    yScale = d3.scale.ordinal().rangeRoundBands([height, 0]),
-    yMap = function(d) { return yScale(yValue(d));}, // data -> display
+    yScale = d3.scale.ordinal().rangeRoundPoints([height, 0]),
+    yMap = function(d) { console.log(d, yValue(d)); return yScale(yValue(d));}, // data -> display
     yAxis = d3.svg.axis().scale(yScale).orient("left");
 
 
@@ -72,18 +72,18 @@ d3.json("data/recreate.json", function(error, data) {
     var root_obj = {};
     root_obj['timestamp'] = convertToDate(data[0].root_memento.timestamp);
     root_obj['url'] = data[0].root_memento.url;
-    root_obj['archieved_at'] = data[0].root_memento.archived_at;
+    root_obj['archived_at'] = data[0].root_memento.archived_at;
 
     // sort resource data
     data[0].resources.sort(function(a, b){
-        if (a.archieved_at < b.archieved_at) //sort string ascending
+        if (a.archived_at < b.archived_at) //sort string ascending
             return -1;
-        if (a.archieved_at > b.archieved_at)
+        if (a.archived_at > b.archived_at)
             return 1;
         return 0; //default return value (no sorting)
     });
 
-    var resource_plot_values = [];
+    var resource_plot_values = [{y: 1, archived_at: root_obj.archived_at, x: 0, freq: 1}];
     var y_value = 1;
     var initial_archive = data[0].resources[0].archived_at;
 
@@ -96,7 +96,13 @@ d3.json("data/recreate.json", function(error, data) {
 
         val.y = y_value;
         val.x = new Date(convertToDate(d.timestamp).getTime() - root_obj.timestamp.getTime()).getTime();
-        val.archieved_at = d.archived_at;
+
+        if ( val.x < 0 )
+        	val.x = -1 * Math.log(Math.abs(val.x));
+        else
+        	val.x = Math.log(val.x);
+
+        val.archived_at = d.archived_at;
 
         val.freq = 1;
 
@@ -115,13 +121,16 @@ function plotResourceGraph(data) {
 
 	yScale.domain(data.map(function(d) { return d.archived_at; }));
 
+	console.log(yScale.range());
+	console.log(xScale.domain);
+
 	var xPosition;
 	var yPosition;
 
-    var title = 'Average Injuries by Age';
+    var title = 'Recreate';
     var yText = '';
     var radius = 3.5;
-    var minRadious = 2.7;
+    var minRadious = 4.7;
 
 	// x-axis
 	svg.append("g")
@@ -199,4 +208,8 @@ function convertToDate(obj) {
                     parseInt(obj.substr(10,2)),
                     parseInt(obj.substr(12,2))
     );
+}
+
+function scaleToLogValue(obj) {
+
 }
