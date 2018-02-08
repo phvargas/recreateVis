@@ -276,13 +276,17 @@ path {
     shape-rendering: crispEdges;
 }
 
+g.y.axis path.domain{
+    fill: none;
+    stroke-width: 0;
+}
+
 .tooltip {
   position: absolute;
   width: 100px;
   height: 28px;
   pointer-events: none;
 }
-
 
 @media only screen and (max-width: 860px) {
   .index-pop {
