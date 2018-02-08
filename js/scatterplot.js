@@ -23,26 +23,16 @@ var xValue = function(d) {
 			return d.x;
     },
     xScale = d3.scale.linear().range([0, width]), // value -> display
-    xMap = function(d) { console.log(xScale(xValue(d))); return xScale(xValue(d));}, // data -> display
+    xMap = function(d) { return xScale(xValue(d));}, // data -> display
     xAxis = d3.svg.axis().scale(xScale).orient("bottom");
 
-/*
-// setup y
-var yValue = function(d) {
-    //return d.ave_injury;
-    return d.y;
-    }, // data -> value
-    yScale = d3.scale.linear().range([height, 0]), // value -> display
-    yMap = function(d) { return yScale(yValue(d));}, // data -> display
-    yAxis = d3.svg.axis().scale(yScale).orient("left");
-*/
 // setup y
 var yValue = function(d) {
     //return d.ave_injury;
     return d.archived_at;
     }, // data -> value
     yScale = d3.scale.ordinal().rangeRoundPoints([height, 0]),
-    yMap = function(d) { console.log(d, yValue(d)); return yScale(yValue(d));}, // data -> display
+    yMap = function(d) { return yScale(yValue(d));}, // data -> display
     yAxis = d3.svg.axis().scale(yScale).orient("left");
 
 
@@ -70,7 +60,7 @@ d3.json("data/recreate.json", function(error, data) {
 
     // unpack root-memento features
     var root_obj = {};
-    root_obj['timestamp'] = convertToDate(data[0].root_memento.timestamp);
+    root_obj['timestamp'] = data[0].root_memento.timestamp;
     root_obj['url'] = data[0].root_memento.url;
     root_obj['archived_at'] = data[0].root_memento.archived_at;
 
@@ -83,7 +73,9 @@ d3.json("data/recreate.json", function(error, data) {
         return 0; //default return value (no sorting)
     });
 
-    var resource_plot_values = [{y: 1, archived_at: root_obj.archived_at, x: 0, freq: 1}];
+    var resource_plot_values = [{y: 1, archived_at: root_obj.archived_at,
+								 x: 0, freq: 1, timestamp: root_obj.timestamp,
+                                 relativeTime: 0}];
     var y_value = 1;
     var initial_archive = data[0].resources[0].archived_at;
 
@@ -94,19 +86,14 @@ d3.json("data/recreate.json", function(error, data) {
             y_value++;
         }
 
+        val.relativeTime = getRelativeTime(d.timestamp, root_obj.timestamp);
         val.y = y_value;
-        val.x = new Date(convertToDate(d.timestamp).getTime() - root_obj.timestamp.getTime()).getTime();
-
-        if ( val.x < 0 )
-        	val.x = -1 * Math.log(Math.abs(val.x));
-        else
-        	val.x = Math.log(val.x);
-
+        val.x = scaleToLogValue(val.relativeTime);
         val.archived_at = d.archived_at;
-
+        val.timestamp = d.timestamp;
         val.freq = 1;
 
-        resource_plot_values .push(val);
+        resource_plot_values.push(val);
     });
 
 
@@ -117,12 +104,9 @@ d3.json("data/recreate.json", function(error, data) {
 function plotResourceGraph(data) {
 	// don't want dots overlapping axis, so add in buffer to data domain
 	xScale.domain([d3.min(data, xValue)-1, d3.max(data, xValue)+1]);
-	//yScale.domain([d3.min(data, yValue)-1, d3.max(data, yValue)+1]);
+    yScale.domain(data.map(function(d) { return d.archived_at; }));
 
-	yScale.domain(data.map(function(d) { return d.archived_at; }));
-
-	console.log(yScale.range());
-	console.log(xScale.domain);
+    console.log(data);
 
 	var xPosition;
 	var yPosition;
@@ -183,13 +167,13 @@ function plotResourceGraph(data) {
     	xPosition = d3.event.pageX + 10;
     	yPosition = d3.event.pageY;
 
-    	if (xPosition >= visWidth - 100 )
+    	if (xPosition >= visWidth - 200 )
     		xPosition -= 100;
 
         tooltip.style("opacity", 0.9)
-            .html("<strong>timestamp</strong>: " + d.x + "<br />" +
-                  "<strong>Time</strong>: " + (d.x).toFixed(2) +
-			      "<br /> <strong>Personnel Inj</strong>:"  +  d.freq + "<br/>")
+            .html("<strong>timestamp</strong>: " + d.timestamp + "<br />" +
+                  "<strong>Relative Time</strong>: " + getTimePeriod((d.relativeTime)) +
+			      "<br /> <strong>Num Resources</strong>:"  +  d.freq + "<br/>")
             .style("left", xPosition + "px")
 			.style("top", yPosition + "px");
     }
@@ -200,6 +184,7 @@ function plotResourceGraph(data) {
     }
 }
 
+// Function converts Timestamp format to Unix epoch
 function convertToDate(obj) {
     return new Date(parseInt(obj.substr(0,4)),
                     parseInt(obj.substr(4,2)) - 1,
@@ -210,6 +195,41 @@ function convertToDate(obj) {
     );
 }
 
-function scaleToLogValue(obj) {
+function scaleToLogValue(relativeTime) {
+	if ( relativeTime < 0 )
+		relativeTime = -1 * Math.log(Math.abs(relativeTime));
+	else
+		relativeTime = Math.log(relativeTime);
 
+	return relativeTime
+}
+
+function getRelativeTime(givenTime, rootTime) {
+	// givenTime and rootTime have timestamp format values. Ex: 19971201152355
+    return convertToDate(givenTime).getTime() - convertToDate(rootTime).getTime();
+}
+
+function getTimePeriod(epoch) {
+    if (epoch == 0)
+        return "Root resource";
+
+    var seconds = epoch / 1000;
+    var minutes = seconds / 60;
+    var hours = minutes / 60;
+    var days = hours / 24;
+    var months = days / 30;
+    var years = months / 12;
+
+    if (Math.abs(years) > 1)
+        return years.toFixed(2).toString() + " Yrs";
+    else if ( Math.abs(months) > 1)
+        return months.toFixed(2).toString() + " Mon";
+    else if (Math.abs(days) > 1)
+        return days.toFixed(2).toString() + " Days";
+    else if (Math.abs(hours) > 1)
+        return hours.toFixed(2).toString() + " Hrs";
+    else if ( Math.abs(minutes) > 1 )
+        return minutes.toFixed(2).toString() + " Mins";
+    else
+        return seconds.toFixed(2).toString() + " Secs";
 }
