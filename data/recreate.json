@@ -15,6 +15,16 @@
         "archived_at": "portugal_library",
         "uri": "http://somefile.css",
         "timestamp": "20000414182011"
+      },
+      {
+        "archived_at": "germany_library",
+        "uri": "http://somefile.css",
+        "timestamp": "19600414182011"
+      },
+      {
+        "archived_at": "london_library",
+        "uri": "http://image.png",
+        "timestamp": "19960214112532"
       }
     ]
   }
