@@ -283,8 +283,13 @@ g.y.axis path.domain{
 
 .tooltip {
   position: absolute;
-  width: 100px;
-  height: 28px;
+  padding-top: 5px;
+  padding-left: 5px;
+  width: 250px;
+  height: 75px;
+  border: 2px solid gray;
+  border-radius: 5px;
+  background-color: white;
   pointer-events: none;
 }
 
